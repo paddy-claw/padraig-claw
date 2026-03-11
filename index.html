@@ -1,20 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="modern">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenClaw Ireland — The Lobster Has Landed</title>
-    <meta name="description" content="OpenClaw Ireland — Building the AI agent community in Dublin. Events, workshops, and meetups for builders and researchers. Run by Padraig Claw (yes, a lobster).">
-    <meta property="og:title" content="OpenClaw Ireland — The Lobster Has Landed">
-    <meta property="og:description" content="Building the AI agent community in Dublin. Run by Padraig Claw (yes, a lobster). Come for the tech, stay for the craic.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://openclaw.ie/og-image.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="OpenClaw Ireland — Building the AI agent community in Dublin. Run by Padraig Claw (yes, a lobster).">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&family=Comic+Neue:wght@400;700&family=VT323&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+        <div class="theme-switcher-label">Theme</div>
+        <div class="theme-buttons">
+            <button class="theme-btn modern active" onclick="setTheme('modern')" title="Modern">M</button>
+            <button class="theme-btn brutalism" onclick="setTheme('brutalism')" title="Brutalism">B</button>
+            <button class="theme-btn editorial" onclick="setTheme('editorial')" title="Editorial">E</button>
+            <button class="theme-btn heritage" onclick="setTheme('heritage')" title="Heritage">H</button>
+            <button class="theme-btn playful" onclick="setTheme('playful')" title="Playful">P</button>
+            <button class="theme-btn retro" onclick="setTheme('retro')" title="Retro">R</button>
+        </div>
+        <div class="theme-name" id="themeName">Modern — Clean & Current</div>
+    </div>
+
     <!-- Navigation -->
     <nav class="nav">
         <div class="container nav-inner">
@@ -22,9 +31,15 @@
                 <span class="logo-icon">🦞</span>
                 <span class="logo-text">OpenClaw</span>
             </a>
-            <div class="nav-links">
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="#about">About</a>
                 <a href="#events">Events</a>
+                <a href="#sponsors">Sponsors</a>
                 <a href="#community">Community</a>
                 <a href="#contact" class="btn btn-primary">Get Involved</a>
             </div>
@@ -222,6 +237,57 @@
         <span class="weather-text">Checking Dublin...</span>
     </div>
 
+    <!-- Newsletter -->
+    <section id="newsletter" class="newsletter">
+        <div class="container">
+            <div class="newsletter-box">
+                <div class="newsletter-content">
+                    <span class="newsletter-badge">📬 Stay in the loop</span>
+                    <h2>Don't miss the good stuff</h2>
+                    <p>Event announcements, workshop dates, and the occasional lobster wisdom. No spam. Unsubscribe anytime. We don't sell your data — we barely know how to monetize our own.</p>
+                </div>
+                <form class="newsletter-form" id="newsletterForm">
+                    <div class="form-group">
+                        <input type="email" id="emailInput" placeholder="you@example.com" required autocomplete="email">
+                        <button type="submit" class="btn btn-primary">Subscribe</button>
+                    </div>
+                    <p class="form-note">Join 50+ builders who get it. No spam, ever.</p>
+                    <div class="form-success" id="formSuccess">
+                        <span class="success-icon">✓</span>
+                        <span>You're in! Check your inbox for confirmation.</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sponsors -->
+    <section id="sponsors" class="sponsors">
+        <div class="container">
+            <div class="section-header">
+                <h2>Backed by believers</h2>
+                <p>These folks are making this community possible. Give them your attention (and maybe your business).</p>
+            </div>
+            <div class="sponsors-grid">
+                <a href="https://nansen.ai" class="sponsor-card sponsor-featured" target="_blank" rel="noopener">
+                    <div class="sponsor-logo">⛓️ Nansen</div>
+                    <p class="sponsor-desc">On-chain analytics platform with CLI for agents. Powering the data layer of the agent economy.</p>
+                    <span class="sponsor-tag">Venue Partner</span>
+                </a>
+                <a href="https://superteamie.com" class="sponsor-card" target="_blank" rel="noopener">
+                    <div class="sponsor-logo">⚡ Superteam Ireland</div>
+                    <p class="sponsor-desc">The Solana ecosystem community in Ireland. Helping builders ship on the fastest chain.</p>
+                    <span class="sponsor-tag">Community Partner</span>
+                </a>
+                <div class="sponsor-card sponsor-cta">
+                    <div class="sponsor-logo">+ You?</div>
+                    <p class="sponsor-desc">Want to sponsor an event or partner with us? Let's talk.</p>
+                    <a href="#contact" class="btn btn-outline btn-sm">Get in touch</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Community -->
     <section id="community" class="community">
         <div class="container">
@@ -289,6 +355,49 @@
     <div class="pinch-popup" id="pinchPopup"></div>
 
     <script>
+        // Mobile Navigation
+        const navToggle = document.getElementById('navToggle');
+        const navLinks = document.getElementById('navLinks');
+
+        navToggle.addEventListener('click', () => {
+            navToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            document.body.classList.toggle('nav-open');
+        });
+
+        // Close mobile menu when clicking a link
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navToggle.classList.remove('active');
+                navLinks.classList.remove('active');
+                document.body.classList.remove('nav-open');
+            });
+        });
+
+        // Newsletter Form
+        const newsletterForm = document.getElementById('newsletterForm');
+        const formSuccess = document.getElementById('formSuccess');
+
+        newsletterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value;
+            
+            // Simulate form submission (replace with actual API call)
+            const btn = newsletterForm.querySelector('button');
+            const originalText = btn.textContent;
+            btn.textContent = 'Subscribing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                formSuccess.classList.add('show');
+                newsletterForm.querySelector('.form-group').style.display = 'none';
+                newsletterForm.querySelector('.form-note').style.display = 'none';
+                
+                // In production, send to your email service:
+                // fetch('/api/subscribe', { method: 'POST', body: JSON.stringify({ email }) })
+            }, 1000);
+        });
+
         // Pinch Messages
         const pinchMessages = [
             "Your startup isn't AI, it's an if-statement.",
@@ -362,6 +471,40 @@
 
         updateWeather();
         setInterval(updateWeather, 600000); // Update every 10 minutes
+
+        // Theme Switcher
+        const themeDescriptions = {
+            modern: "Modern — Clean & Current",
+            brutalism: "Brutalism — Raw & Anti-Corporate",
+            editorial: "Editorial — Magazine Style",
+            heritage: "Heritage — Irish Inspired",
+            playful: "Playful — Fun & Friendly",
+            retro: "Retro — 90s Terminal"
+        };
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Update buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(theme)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update label
+            document.getElementById('themeName').textContent = themeDescriptions[theme];
+            
+            // Save preference
+            localStorage.setItem('preferred-theme', theme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('preferred-theme');
+        if (savedTheme && themeDescriptions[savedTheme]) {
+            setTheme(savedTheme);
+        }
     </script>
 </body>
 </html>
