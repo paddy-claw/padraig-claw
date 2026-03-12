@@ -18,7 +18,7 @@ export default function handler(req, res) {
     const inactiveTime = now - lastActive;
     
     let state = 'sleeping';
-    if (inactiveTime < 2 * 60 * 1000) {
+    if (inactiveTime < 1 * 60 * 1000) {
       state = 'working';
     } else if (inactiveTime < 20 * 60 * 1000) {
       state = 'coffee';
