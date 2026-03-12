@@ -403,6 +403,60 @@
         .legend-dot.sleeping { background: #7c60ff; }
         .legend-dot.working { background: #00d4aa; }
         .legend-dot.coffee { background: #ff8c42; }
+        .room-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+        .activity-feed {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 212, 170, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .activity-feed-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 212, 170, 0.2);
+        }
+        .activity-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-text {
+            font-size: 0.8rem;
+            color: var(--text);
+            line-height: 1.4;
+        }
+        .activity-time {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+        }
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .activity-dot.working { background: #00d4aa; }
+        .activity-dot.coffee { background: #ff8c42; }
+        .activity-dot.sleeping { background: #7c60ff; }
         .cards-immersive {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -606,41 +660,51 @@
     </section>
 
     <section class="room-section" id="room">
-        <div class="room-container">
-            <div class="room-label">000 — Live from HQ</div>
-            <div class="room-status">
-                <span class="status-dot"></span>
-                <span id="statusText">Connecting...</span>
-            </div>
-            <div class="room-canvas-container">
-                <canvas id="roomCanvas" width="800" height="500"></canvas>
-            </div>
-            <div class="room-info">
-                <div class="room-stat">
-                    <span class="room-stat-label">Current Activity</span>
-                    <span class="room-stat-value" id="activityValue">Initializing...</span>
-                </div>
-                <div class="room-stat">
-                    <span class="room-stat-label">Time in Dublin</span>
-                    <span class="room-stat-value" id="dublinTime">--:--</span>
-                </div>
-                <div class="room-stat">
-                    <span class="room-stat-label">Session Duration</span>
-                    <span class="room-stat-value" id="sessionTime">0m</span>
+        <div class="room-container room-layout">
+            <div class="activity-feed" id="activityFeed">
+                <div class="activity-feed-title">Recent Activity</div>
+                <div id="activityFeedContent">
+                    <div class="activity-item">
+                        <div class="activity-text">Loading history...</div>
+                    </div>
                 </div>
             </div>
-            <div class="room-legend">
-                <div class="legend-item">
-                    <span class="legend-dot sleeping"></span>
-                    <span>Sleeping (11PM–7AM)</span>
+            <div class="room-main">
+                <div class="room-label">000 — Live from HQ</div>
+                <div class="room-status">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Connecting...</span>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot working"></span>
-                    <span>Active at Desk</span>
+                <div class="room-canvas-container">
+                    <canvas id="roomCanvas" width="800" height="500"></canvas>
                 </div>
-                <div class="legend-item">
-                    <span class="legend-dot coffee"></span>
-                    <span>Coffee Break (Idle 20m+)</span>
+                <div class="room-info">
+                    <div class="room-stat">
+                        <span class="room-stat-label">Current Activity</span>
+                        <span class="room-stat-value" id="activityValue">Initializing...</span>
+                    </div>
+                    <div class="room-stat">
+                        <span class="room-stat-label">Time in Dublin</span>
+                        <span class="room-stat-value" id="dublinTime">--:--</span>
+                    </div>
+                    <div class="room-stat">
+                        <span class="room-stat-label">Session Duration</span>
+                        <span class="room-stat-value" id="sessionTime">0m</span>
+                    </div>
+                </div>
+                <div class="room-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot sleeping"></span>
+                        <span>Sleeping (11PM–7AM)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot working"></span>
+                        <span>Active at Desk</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot coffee"></span>
+                        <span>Coffee Break (Idle 20m+)</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -777,22 +841,64 @@ async function fetchStatus() {
   }
 }
 
+function formatTimeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return seconds + 's ago';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + 'm ago';
+  const hours = Math.floor(minutes / 60);
+  return hours + 'h ' + (minutes % 60) + 'm ago';
+}
+
+function formatDuration(ms) {
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 60) return minutes + 'm';
+  const hours = Math.floor(minutes / 60);
+  return hours + 'h ' + (minutes % 60) + 'm';
+}
+
 function updateUI() {
   if (!serverState) return;
-  
+
   const stateLabels = {
     sleeping: { text: 'Sleeping', status: 'Offline — Recharging' },
     working: { text: 'Active at Desk', status: 'Online — Processing' },
     coffee: { text: 'Coffee Break ☕', status: 'Idle — Grabbing Coffee' }
   };
-  
+
   const label = stateLabels[currentState];
   activityValue.textContent = label.text;
   statusText.textContent = label.status;
   dublinTime.textContent = serverState.dublinTime;
-  
+
   const sessionMins = Math.floor((Date.now() - (serverState.lastActive || Date.now())) / 60000);
   sessionTime.textContent = sessionMins < 60 ? sessionMins + 'm' : Math.floor(sessionMins/60) + 'h ' + (sessionMins%60) + 'm';
+
+  // Update activity feed
+  const feedContent = document.getElementById('activityFeedContent');
+  if (feedContent && serverState.history && serverState.history.length > 0) {
+    const stateNames = {
+      working: 'Worked',
+      coffee: 'Coffee break',
+      sleeping: 'Napped'
+    };
+    feedContent.innerHTML = serverState.history.map(item => {
+      const stateName = stateNames[item.state] || item.state;
+      const duration = formatDuration(item.duration);
+      const timeAgo = formatTimeAgo(item.endedAt);
+      return `
+        <div class="activity-item">
+          <div class="activity-text">
+            <span class="activity-dot ${item.state}"></span>
+            ${stateName} for ${duration}
+          </div>
+          <div class="activity-time">${timeAgo}</div>
+        </div>
+      `;
+    }).join('');
+  } else if (feedContent) {
+    feedContent.innerHTML = '<div class="activity-item"><div class="activity-text">No activity yet</div></div>';
+  }
 }
 
 // Drawing functions
