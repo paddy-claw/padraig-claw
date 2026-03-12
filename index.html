@@ -319,24 +319,26 @@
             max-width: 100px;
         }
         .room-status {
-            font-size: 0.75rem;
-            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
             margin-bottom: 24px;
             display: flex;
             align-items: center;
             gap: 12px;
+            font-family: 'Syncopate', sans-serif;
         }
         .status-dot {
-            width: 8px; height: 8px;
+            width: 12px; height: 12px;
             border-radius: 50%;
             background: var(--accent);
-            animation: pulse 2s infinite;
+            animation: pulse 1.5s infinite;
         }
         @keyframes pulse {
-            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.4); }
-            50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(0, 212, 170, 0); }
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.6); }
+            50% { opacity: 0.6; box-shadow: 0 0 0 12px rgba(0, 212, 170, 0); }
         }
         .room-canvas-container {
             position: relative;
@@ -404,17 +406,24 @@
         .legend-dot.working { background: #00d4aa; }
         .legend-dot.coffee { background: #ff8c42; }
         .room-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 32px;
-            align-items: start;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .room-main {
+            width: 100%;
+        }
+        .room-canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
         }
         .activity-feed {
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(0, 212, 170, 0.1);
             border-radius: 8px;
             padding: 20px;
-            max-height: 500px;
+            max-height: 200px;
             overflow-y: auto;
         }
         .activity-feed-title {
@@ -661,19 +670,11 @@
 
     <section class="room-section" id="room">
         <div class="room-container room-layout">
-            <div class="activity-feed" id="activityFeed">
-                <div class="activity-feed-title">Recent Activity</div>
-                <div id="activityFeedContent">
-                    <div class="activity-item">
-                        <div class="activity-text">Loading history...</div>
-                    </div>
-                </div>
-            </div>
             <div class="room-main">
                 <div class="room-label">000 — Live from HQ</div>
                 <div class="room-status">
                     <span class="status-dot"></span>
-                    <span id="statusText">Connecting...</span>
+                    <span id="statusText">Live Feed</span>
                 </div>
                 <div class="room-canvas-container">
                     <canvas id="roomCanvas" width="800" height="500"></canvas>
@@ -704,6 +705,14 @@
                     <div class="legend-item">
                         <span class="legend-dot coffee"></span>
                         <span>Coffee Break (Idle 20m+)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+                <div class="activity-feed-title">Recent Activity</div>
+                <div id="activityFeedContent">
+                    <div class="activity-item">
+                        <div class="activity-text">Loading history...</div>
                     </div>
                 </div>
             </div>
@@ -868,7 +877,7 @@ function updateUI() {
 
   const label = stateLabels[currentState];
   activityValue.textContent = label.text;
-  statusText.textContent = label.status;
+  // Keep status as "Live Feed" - always shows it's a live connection
   dublinTime.textContent = serverState.dublinTime;
 
   const sessionMins = Math.floor((Date.now() - (serverState.lastActive || Date.now())) / 60000);
