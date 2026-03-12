@@ -4,19 +4,9 @@ export default function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Debug: log what we receive (remove after fixing)
-  const receivedSecret = req.headers['x-webhook-secret'];
-  const envSecret = process.env.WEBHOOK_SECRET;
-  console.log('Debug:', { 
-    receivedSecretLength: receivedSecret?.length, 
-    envSecretLength: envSecret?.length,
-    receivedSecretStart: receivedSecret?.substring(0, 20),
-    envSecretStart: envSecret?.substring(0, 20),
-    match: receivedSecret === envSecret 
-  });
-
   // Verify secret token
-  if (receivedSecret !== envSecret) {
+  const secret = req.headers['x-webhook-secret'];
+  if (secret !== process.env.WEBHOOK_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
