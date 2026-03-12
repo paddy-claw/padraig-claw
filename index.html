@@ -851,13 +851,87 @@ const ctx = canvas.getContext('2d');
 const statusText = document.getElementById('statusText');
 const activityValue = document.getElementById('activityValue');
 const dublinTime = document.getElementById('dublinTime');
-const sessionTime = document.getElementById('sessionTime');
 
 // Room state (from server)
 let currentState = 'sleeping';
 let serverState = null;
 let lastFetch = 0;
 let currentWeather = 'clear'; // clear, rain, cloudy, snow
+
+// Activity history - persisted in localStorage
+const STORAGE_KEY = 'padraig_activity_history';
+const LAST_STATE_KEY = 'padraig_last_state';
+const LAST_STATE_CHANGE_KEY = 'padraig_last_state_change';
+const SEEDED_KEY = 'padraig_history_seeded';
+
+async function seedHistoryFromServer() {
+  try {
+    const alreadySeeded = localStorage.getItem(SEEDED_KEY);
+    if (alreadySeeded) return;
+    
+    const response = await fetch('/activity-history.json?_=' + Date.now());
+    if (!response.ok) return;
+    
+    const serverHistory = await response.json();
+    if (serverHistory && serverHistory.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serverHistory));
+      localStorage.setItem(SEEDED_KEY, 'true');
+      
+      // Set last state from most recent entry
+      const mostRecent = serverHistory[0];
+      localStorage.setItem(LAST_STATE_KEY, mostRecent.state);
+      localStorage.setItem(LAST_STATE_CHANGE_KEY, mostRecent.endedAt.toString());
+    }
+  } catch (e) {
+    console.log('Failed to seed history:', e);
+  }
+}
+
+function loadHistory() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHistory(history) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 10)));
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+function getLastState() {
+  try {
+    return localStorage.getItem(LAST_STATE_KEY) || 'sleeping';
+  } catch (e) {
+    return 'sleeping';
+  }
+}
+
+function setLastState(state) {
+  try {
+    localStorage.setItem(LAST_STATE_KEY, state);
+  } catch (e) {}
+}
+
+function getLastStateChange() {
+  try {
+    const stored = localStorage.getItem(LAST_STATE_CHANGE_KEY);
+    return stored ? parseInt(stored) : Date.now();
+  } catch (e) {
+    return Date.now();
+  }
+}
+
+function setLastStateChange(timestamp) {
+  try {
+    localStorage.setItem(LAST_STATE_CHANGE_KEY, timestamp.toString());
+  } catch (e) {}
+}
 
 // Animation state
 let characterPos = { x: 110, y: 300 };
@@ -881,6 +955,12 @@ async function fetchStatus() {
     if (!response.ok) throw new Error('Failed to fetch');
     serverState = await response.json();
     lastFetch = Date.now();
+    
+    // Initialize last state on first load
+    if (!getLastState()) {
+      setLastState(serverState.state || 'sleeping');
+      setLastStateChange(Date.now());
+    }
     
     // Update state if changed
     if (serverState.state !== currentState) {
@@ -947,11 +1027,32 @@ function updateUI() {
 
   const label = stateLabels[currentState];
   activityValue.textContent = label.text;
-  // Keep status as "Live Feed" - always shows it's a live connection
   dublinTime.textContent = serverState.dublinTime;
 
-  const sessionMins = Math.floor((Date.now() - (serverState.lastActive || Date.now())) / 60000);
-  sessionTime.textContent = sessionMins < 60 ? sessionMins + 'm' : Math.floor(sessionMins/60) + 'h ' + (sessionMins%60) + 'm';
+  // Track state changes client-side
+  const lastKnownState = getLastState();
+  const lastStateChange = getLastStateChange();
+  let history = loadHistory();
+  
+  if (currentState !== lastKnownState) {
+    // State changed! Record the previous state
+    const now = Date.now();
+    const duration = now - lastStateChange;
+    
+    const historyEntry = {
+      state: lastKnownState,
+      startedAt: lastStateChange,
+      endedAt: now,
+      duration: duration
+    };
+    
+    history.unshift(historyEntry);
+    history = history.slice(0, 10); // Keep last 10
+    saveHistory(history);
+    
+    setLastState(currentState);
+    setLastStateChange(now);
+  }
 
   // Update activity feed
   const feedContent = document.getElementById('activityFeedContent');
@@ -965,23 +1066,21 @@ function updateUI() {
     let html = '';
     
     // Add current activity at the top
-    if (serverState.lastActive) {
-      const currentStateName = stateNames[currentState] || currentState;
-      const currentDuration = formatTimeAgo(serverState.lastActive);
-      html += `
-        <div class="activity-item" style="opacity: 0.8;">
-          <div class="activity-text">
-            <span class="activity-dot ${currentState}"></span>
-            Currently ${currentStateName.toLowerCase()}
-          </div>
-          <div class="activity-time">Since ${currentDuration.replace(' ago', '')}</div>
+    const currentStateName = stateNames[currentState] || currentState;
+    const currentDuration = formatTimeAgo(getLastStateChange());
+    html += `
+      <div class="activity-item" style="opacity: 0.8;">
+        <div class="activity-text">
+          <span class="activity-dot ${currentState}"></span>
+          Currently ${currentStateName.toLowerCase()}
         </div>
-      `;
-    }
+        <div class="activity-time">Since ${currentDuration.replace(' ago', '')}</div>
+      </div>
+    `;
     
     // Add history
-    if (serverState.history && serverState.history.length > 0) {
-      html += serverState.history.map(item => {
+    if (history.length > 0) {
+      html += history.map(item => {
         const stateName = stateNames[item.state] || item.state;
         const duration = formatDuration(item.duration);
         const timeAgo = formatTimeAgo(item.endedAt);
@@ -995,8 +1094,6 @@ function updateUI() {
           </div>
         `;
       }).join('');
-    } else if (!serverState.lastActive) {
-      html = '<div class="activity-item"><div class="activity-text">No activity recorded yet</div></div>';
     }
     
     feedContent.innerHTML = html;
@@ -1284,7 +1381,9 @@ function animate() {
 }
 
 // Poll status every 30 seconds
-fetchStatus();
+seedHistoryFromServer().then(() => {
+  fetchStatus();
+});
 fetchWeather();
 setInterval(fetchStatus, 15000);
 setInterval(fetchWeather, 600000); // Update weather every 10 minutes
