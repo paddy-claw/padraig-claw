@@ -2,7 +2,7 @@
 
 > A living, breathing website with real-time activity simulation.
 
-**Live URL:** https://openclaw.ie (deployed on Vercel)
+**Live URL:** https://openclawhub-ireland.com (deployed on Vercel)
 
 ## Overview
 
