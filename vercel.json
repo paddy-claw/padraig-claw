@@ -14,6 +14,14 @@
       "dest": "/api/status.js"
     },
     {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/showcase",
+      "dest": "/showcase.html"
+    },
+    {
       "src": "/robots.txt",
       "dest": "/robots.txt",
       "headers": {
@@ -36,6 +44,9 @@
         "Pragma": "no-cache",
         "Expires": "0"
       }
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
