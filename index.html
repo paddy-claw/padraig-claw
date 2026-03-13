@@ -823,6 +823,13 @@
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ef4444;
         }
+        @media (max-width: 480px) {
+            .room-info {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 16px;
+                padding: 16px;
+            }
+        }
         @media (max-width: 600px) {
             .newsletter-inputs {
                 flex-direction: column;
@@ -1095,6 +1102,9 @@
     </footer>
     <script>
 // ===== ROOM SIMULATION - Vercel API Version =====
+const POLL_INTERVAL = 15000;     // ms between status fetches
+const WEATHER_INTERVAL = 600000; // ms between weather fetches
+
 const canvas = document.getElementById('roomCanvas');
 const ctx = canvas.getContext('2d');
 const statusText = document.getElementById('statusText');
@@ -1705,11 +1715,10 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-// Poll status every 15 seconds
 fetchStatus();
 fetchWeather();
-setInterval(fetchStatus, 15000);
-setInterval(fetchWeather, 600000); // Update weather every 10 minutes
+setInterval(fetchStatus, POLL_INTERVAL);
+setInterval(fetchWeather, WEATHER_INTERVAL);
 
 // Start animation
 animate();
