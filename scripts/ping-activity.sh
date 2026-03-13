@@ -58,7 +58,7 @@ EOF
 )
 
 # Send the ping
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
+RESPONSE=$(curl -s -L -w "\n%{http_code}" -X POST "$WEBHOOK_URL" \
     -H "Content-Type: application/json" \
     -H "X-Webhook-Secret: $WEBHOOK_SECRET" \
     -d "$PAYLOAD" 2>/dev/null)
