@@ -1253,6 +1253,17 @@ function updateUI() {
   activityValue.textContent = label.text;
   dublinTime.textContent = serverState.dublinTime;
 
+  // Update gauge
+  const gaugeNeedle = document.getElementById('gaugeNeedle');
+  const gaugeValue = document.getElementById('gaugeValue');
+  if (gaugeNeedle && gaugeValue) {
+    const intensity = currentIntensity || 0;
+    // Map 0-4 to -90deg to 90deg
+    const angle = -90 + (intensity / 4) * 180;
+    gaugeNeedle.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    gaugeValue.textContent = intensity;
+  }
+
   // Track state changes client-side
   const lastKnownState = getLastState();
   const lastStateChange = getLastStateChange();
