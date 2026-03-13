@@ -22,12 +22,20 @@
       "dest": "/api/newsletter.js"
     },
     {
+      "src": "/api/unsubscribe",
+      "dest": "/api/unsubscribe.js"
+    },
+    {
       "src": "/",
       "dest": "/index.html"
     },
     {
       "src": "/showcase",
       "dest": "/showcase.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin.html"
     },
     {
       "src": "/robots.txt",

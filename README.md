@@ -35,10 +35,12 @@ The OpenClaw Ireland website features an immersive dark-themed design with a uni
 
 ### 📧 Newsletter
 Email signup for event notifications:
+- `POST /api/newsletter` — Subscribe with email + optional name
+- `POST /api/unsubscribe` — Unsubscribe by email
 - Privacy-respecting (no marketing spam)
 - Stored in Vercel Blob
 - Confirmation messages
-- Admin stats endpoint
+- Admin dashboard at `/admin`
 
 ### 📊 Analytics
 Privacy-friendly analytics via [Plausible](https://plausible.io):
@@ -53,6 +55,7 @@ Privacy-friendly analytics via [Plausible](https://plausible.io):
 website/
 ├── index.html              # Main landing page (immersive design)
 ├── 404.html                # Custom error page
+├── admin.html              # Admin dashboard
 ├── showcase.html           # Design gallery (v1-v13 variations)
 ├── design8-living.html     # Previous iteration
 ├── og-image.html           # OG image generator
@@ -68,7 +71,8 @@ website/
 │   ├── activity.js        # Legacy webhook endpoint
 │   ├── status.js          # Legacy status endpoint
     ├── health.js          # Health check endpoint
-    └── newsletter.js      # Newsletter signup endpoint
+    ├── newsletter.js      # Newsletter signup endpoint
+    └── unsubscribe.js     # Newsletter unsubscribe endpoint
 └── scripts/
     ├── ping-activity.sh   # Manual activity ping script
     ├── padraig-activity.sh # Activity monitor daemon
