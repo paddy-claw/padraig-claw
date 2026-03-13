@@ -1126,11 +1126,69 @@ function drawFlame(x, y, size) {
   ctx.fill();
 }
 
-const STATE_POSITIONS = {
-  sleeping: { x: 110, y: 300 },
-  working: { x: 510, y: 250 },
-  coffee: { x: 690, y: 180 }
-};
+function drawGauge(x, y, radius, intensity) {
+  // Draw semicircular gauge for workload intensity
+  const segments = [
+    { color: '#22c55e', label: 'LOW' },    // Green
+    { color: '#84cc16', label: '' },       // Lime
+    { color: '#eab308', label: '' },       // Yellow
+    { color: '#f97316', label: '' },       // Orange
+    { color: '#ef4444', label: 'HIGH' }    // Red
+  ];
+  
+  const startAngle = Math.PI;
+  const endAngle = 0;
+  const segmentAngle = (endAngle - startAngle) / segments.length;
+  
+  // Draw colored segments
+  segments.forEach((seg, i) => {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, startAngle + i * segmentAngle, startAngle + (i + 1) * segmentAngle);
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = seg.color;
+    ctx.stroke();
+  });
+  
+  // Draw inner arc background
+  ctx.beginPath();
+  ctx.arc(x, y, radius - 25, startAngle, endAngle);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.stroke();
+  
+  // Calculate needle angle based on intensity (0-4)
+  const normalizedIntensity = Math.min(Math.max(intensity, 0), 4);
+  const needleAngle = startAngle + (normalizedIntensity / 4) * (endAngle - startAngle);
+  
+  // Draw needle
+  const needleLength = radius - 10;
+  const needleX = x + Math.cos(needleAngle) * needleLength;
+  const needleY = y + Math.sin(needleAngle) * needleLength;
+  
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(needleX, needleY);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#ffffff';
+  ctx.stroke();
+  
+  // Draw needle pivot
+  ctx.beginPath();
+  ctx.arc(x, y, 8, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  
+  // Draw labels
+  ctx.font = 'bold 14px Space Grotesk';
+  ctx.fillStyle = '#22c55e';
+  ctx.textAlign = 'left';
+  ctx.fillText('LOW', x - radius - 10, y + 20);
+  
+  ctx.fillStyle = '#ef4444';
+  ctx.textAlign = 'right';
+  ctx.fillText('HIGH', x + radius + 10, y + 20);
+  
+  // Draw 
 
 // Fetch status from Vercel API
 async function fetchStatus() {
@@ -1581,6 +1639,11 @@ function drawRoom() {
   ctx.fillStyle = currentState === 'sleeping' ? '#7c60ff' : currentState === 'working' ? '#FF4D4D' : '#ff8c42';
   ctx.font = '12px monospace';
   ctx.fillText('● ' + currentState.toUpperCase(), 20, 30);
+  
+  // Draw workload intensity gauge (only when working)
+  if (currentState === 'working') {
+    drawGauge(650, 320, 60, currentIntensity);
+  }
 }
 
 function updatePosition() {
