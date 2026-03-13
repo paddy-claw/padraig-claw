@@ -29,7 +29,15 @@ The OpenClaw Ireland website features an immersive dark-themed design with a uni
 ### 📡 Real-Time APIs
 - `POST /api/room` — Webhook from VPS to update state
 - `GET /api/room` — Public status endpoint (no-cache)
+- `GET /api/health` — Health check endpoint
 - Activity history tracking
+
+### 📊 Analytics
+Privacy-friendly analytics via [Plausible](https://plausible.io):
+- No cookies, GDPR-compliant
+- Lightweight script (< 1KB)
+- No personal data collection
+- Dashboard: https://plausible.io/openclaw.ie
 
 ## Project Structure
 
@@ -50,7 +58,8 @@ website/
 ├── api/
 │   ├── room.js            # Combined activity/status endpoint
 │   ├── activity.js        # Legacy webhook endpoint
-│   └── status.js          # Legacy status endpoint
+│   ├── status.js          # Legacy status endpoint
+    └── health.js          # Health check endpoint
 └── scripts/
     ├── ping-activity.sh   # Manual activity ping script
     ├── padraig-activity.sh # Activity monitor daemon

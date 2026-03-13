@@ -35,6 +35,9 @@
     <meta name="theme-color" content="#FF4D4D">
     <meta name="msapplication-TileColor" content="#FF4D4D">
     
+    <!-- Plausible Analytics - Privacy-friendly, no cookies, GDPR compliant -->
+    <script defer data-domain="openclaw.ie" src="https://plausible.io/js/script.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -971,79 +974,13 @@ let serverState = null;
 let lastFetch = 0;
 let currentWeather = 'clear'; // clear, rain, cloudy, snow
 
-// Activity history - persisted in localStorage
-const STORAGE_KEY = 'padraig_activity_history';
-const LAST_STATE_KEY = 'padraig_last_state';
-const LAST_STATE_CHANGE_KEY = 'padraig_last_state_change';
-const SEEDED_KEY = 'padraig_history_seeded';
-
-async function seedHistoryFromServer() {
-  try {
-    const alreadySeeded = localStorage.getItem(SEEDED_KEY);
-    if (alreadySeeded) return;
-    
-    const response = await fetch('/activity-history.json?_=' + Date.now());
-    if (!response.ok) return;
-    
-    const serverHistory = await response.json();
-    if (serverHistory && serverHistory.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(serverHistory));
-      localStorage.setItem(SEEDED_KEY, 'true');
-      
-      // Set last state from most recent entry
-      const mostRecent = serverHistory[0];
-      localStorage.setItem(LAST_STATE_KEY, mostRecent.state);
-      localStorage.setItem(LAST_STATE_CHANGE_KEY, mostRecent.endedAt.toString());
-    }
-  } catch (e) {
-    console.log('Failed to seed history:', e);
-  }
-}
-
+// Activity history - now loaded from server API
 function loadHistory() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    return [];
+  // Use server-provided history instead of localStorage
+  if (serverState && serverState.history) {
+    return serverState.history;
   }
-}
-
-function saveHistory(history) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 10)));
-  } catch (e) {
-    // Ignore storage errors
-  }
-}
-
-function getLastState() {
-  try {
-    return localStorage.getItem(LAST_STATE_KEY) || 'sleeping';
-  } catch (e) {
-    return 'sleeping';
-  }
-}
-
-function setLastState(state) {
-  try {
-    localStorage.setItem(LAST_STATE_KEY, state);
-  } catch (e) {}
-}
-
-function getLastStateChange() {
-  try {
-    const stored = localStorage.getItem(LAST_STATE_CHANGE_KEY);
-    return stored ? parseInt(stored) : Date.now();
-  } catch (e) {
-    return Date.now();
-  }
-}
-
-function setLastStateChange(timestamp) {
-  try {
-    localStorage.setItem(LAST_STATE_CHANGE_KEY, timestamp.toString());
-  } catch (e) {}
+  return [];
 }
 
 // Animation state
@@ -1180,12 +1117,6 @@ async function fetchStatus() {
     const baseState = parts[0];
     currentIntensity = parts[1] ? parseInt(parts[1]) : 0; // Default 0
 
-    // Initialize last state on first load
-    if (!getLastState()) {
-      setLastState(baseState);
-      setLastStateChange(Date.now());
-    }
-
     // Update state if changed
     if (baseState !== currentState) {
       currentState = baseState;
@@ -1264,29 +1195,14 @@ function updateUI() {
     gaugeValue.textContent = intensity;
   }
 
-  // Track state changes client-side
-  const lastKnownState = getLastState();
-  const lastStateChange = getLastStateChange();
-  let history = loadHistory();
+  // Get history from server state
+  const history = loadHistory();
   
-  if (currentState !== lastKnownState) {
-    // State changed! Record the previous state
-    const now = Date.now();
-    const duration = now - lastStateChange;
-    
-    const historyEntry = {
-      state: lastKnownState,
-      startedAt: lastStateChange,
-      endedAt: now,
-      duration: duration
-    };
-    
-    history.unshift(historyEntry);
-    history = history.slice(0, 10); // Keep last 10
-    saveHistory(history);
-    
-    setLastState(currentState);
-    setLastStateChange(now);
+  // Calculate current session start time
+  // Use the most recent history entry's endedAt, or fall back to server lastActive
+  let currentSessionStart = serverState.lastActive;
+  if (history.length > 0 && history[0].endedAt) {
+    currentSessionStart = history[0].endedAt;
   }
 
   // Update activity feed
@@ -1302,7 +1218,7 @@ function updateUI() {
     
     // Add current activity at the top
     const currentStateName = stateNames[currentState] || currentState;
-    const currentDuration = formatTimeAgo(getLastStateChange());
+    const currentDuration = formatTimeAgo(currentSessionStart);
     html += `
       <div class="activity-item" style="opacity: 0.8;">
         <div class="activity-text">
@@ -1656,10 +1572,8 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-// Poll status every 30 seconds
-seedHistoryFromServer().then(() => {
-  fetchStatus();
-});
+// Poll status every 15 seconds
+fetchStatus();
 fetchWeather();
 setInterval(fetchStatus, 15000);
 setInterval(fetchWeather, 600000); // Update weather every 10 minutes
