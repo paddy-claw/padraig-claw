@@ -941,6 +941,110 @@ let isWalking = false;
 let monitorGlow = 0;
 let windowLight = 0.3;
 let typingAnimation = 0;
+let currentIntensity = 0; // 0-3 intensity level
+
+// Client-side activity tracking for intensity calculation
+const ACTIVITY_HISTORY_MS = 10 * 60 * 1000; // 10 minute window
+let activityTimestamps = []; // Track when we saw activity updates
+
+// Steam particles for intensity effects
+let steamParticles = [];
+let lastSteamTime = 0;
+
+function recordActivity(timestamp) {
+  """Record activity timestamp and calculate client-side intensity."""
+  const now = Date.now();
+
+  // Add new timestamp
+  activityTimestamps.push(timestamp);
+
+  // Remove old timestamps outside window
+  const cutoff = now - ACTIVITY_HISTORY_MS;
+  activityTimestamps = activityTimestamps.filter(t => t > cutoff);
+
+  // Calculate intensity based on activity frequency
+  // Level 1: 5-14 updates in 10 min
+  // Level 2: 15-29 updates in 10 min
+  // Level 3: 30+ updates in 10 min
+  const count = activityTimestamps.length;
+  if (count >= 30) return 3;
+  if (count >= 15) return 2;
+  if (count >= 5) return 1;
+  return 0;
+}
+
+function createSteamParticle(x, y, intensity) {
+  return {
+    x: x + (Math.random() - 0.5) * 30,
+    y: y,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: -1 - Math.random() * (intensity * 0.5),
+    life: 1.0,
+    decay: 0.01 + Math.random() * 0.01,
+    size: 5 + Math.random() * 10 * intensity
+  };
+}
+
+function updateSteamParticles() {
+  const now = Date.now();
+  
+  // Spawn new particles based on intensity
+  if (currentIntensity > 0 && currentState === 'working') {
+    const spawnRate = currentIntensity === 1 ? 200 : currentIntensity === 2 ? 100 : 50;
+    if (now - lastSteamTime > spawnRate) {
+      const deskX = 510;
+      const deskY = 180; // Above desk
+      steamParticles.push(createSteamParticle(deskX, deskY, currentIntensity));
+      if (currentIntensity >= 2) {
+        steamParticles.push(createSteamParticle(deskX + 20, deskY, currentIntensity));
+      }
+      lastSteamTime = now;
+    }
+  }
+  
+  // Update existing particles
+  for (let i = steamParticles.length - 1; i >= 0; i--) {
+    const p = steamParticles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= p.decay;
+    if (p.life <= 0) {
+      steamParticles.splice(i, 1);
+    }
+  }
+}
+
+function drawSteamParticles() {
+  for (const p of steamParticles) {
+    const alpha = p.life * 0.3;
+    ctx.fillStyle = `rgba(200, 200, 200, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawFlame(x, y, size) {
+  // Flicker effect
+  const flicker = 0.8 + Math.random() * 0.4;
+  const flameHeight = size * flicker;
+  
+  // Outer flame (orange)
+  ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.quadraticCurveTo(x - size/2, y - flameHeight/2, x, y - flameHeight);
+  ctx.quadraticCurveTo(x + size/2, y - flameHeight/2, x, y);
+  ctx.fill();
+  
+  // Inner flame (yellow)
+  ctx.fillStyle = 'rgba(255, 200, 0, 0.9)';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.quadraticCurveTo(x - size/4, y - flameHeight/3, x, y - flameHeight * 0.7);
+  ctx.quadraticCurveTo(x + size/4, y - flameHeight/3, x, y);
+  ctx.fill();
+}
 
 const STATE_POSITIONS = {
   sleeping: { x: 110, y: 300 },
@@ -955,20 +1059,33 @@ async function fetchStatus() {
     if (!response.ok) throw new Error('Failed to fetch');
     serverState = await response.json();
     lastFetch = Date.now();
-    
+
+    // Parse state (ignore any embedded intensity, we'll calculate client-side)
+    const rawState = serverState.state || 'sleeping';
+    const baseState = rawState.split(',')[0]; // Remove any ,N suffix
+
+    // Record activity and calculate client-side intensity
+    // We record whenever lastActive changes (new ping from watcher)
+    const lastActive = serverState.lastActive || 0;
+    const prevLastActive = window._lastRecordedActivity || 0;
+    if (lastActive !== prevLastActive) {
+      currentIntensity = recordActivity(lastActive);
+      window._lastRecordedActivity = lastActive;
+    }
+
     // Initialize last state on first load
     if (!getLastState()) {
-      setLastState(serverState.state || 'sleeping');
+      setLastState(baseState);
       setLastStateChange(Date.now());
     }
-    
+
     // Update state if changed
-    if (serverState.state !== currentState) {
-      currentState = serverState.state;
+    if (baseState !== currentState) {
+      currentState = baseState;
       targetPos = STATE_POSITIONS[currentState];
       isWalking = true;
     }
-    
+
     // Update UI
     updateUI();
   } catch (err) {
@@ -1214,16 +1331,33 @@ function drawDesk(x, y, w, h) {
   drawRect(x + 30, y - 40, 60, 40, '#1a1a2e');
   drawRect(x + 35, y - 35, 50, 30, '#0a0a12');
   drawRect(x + 55, y - 10, 10, 10, '#2a2a3e');
-  
+
   if (monitorGlow > 0) {
-    ctx.fillStyle = `rgba(255, 77, 77, ${monitorGlow * 0.3})`;
+    // Screen glow - flicker for high intensity
+    let glowAlpha = monitorGlow * 0.3;
+    if (currentIntensity >= 3) {
+      glowAlpha += Math.random() * 0.2; // Flicker effect
+    }
+    ctx.fillStyle = `rgba(255, 77, 77, ${glowAlpha})`;
     ctx.fillRect(x + 35, y - 35, 50, 30);
     ctx.fillStyle = `rgba(255, 77, 77, ${monitorGlow})`;
     ctx.fillRect(x + 40, y - 30, 20, 2);
     ctx.fillRect(x + 40, y - 25, 35, 2);
     ctx.fillRect(x + 40, y - 20, 25, 2);
   }
-  
+
+  // Laptop flames for high intensity
+  if (currentState === 'working' && currentIntensity >= 2) {
+    const flameSize = currentIntensity === 3 ? 15 : 8;
+    // Small flame on laptop corner
+    drawFlame(x + 80, y - 5, flameSize);
+    if (currentIntensity >= 3) {
+      // Additional flames for level 3
+      drawFlame(x + 75, y - 3, flameSize * 0.8);
+      drawFlame(x + 85, y - 3, flameSize * 0.8);
+    }
+  }
+
   drawRect(x + 25, y + 5, 50, 5, '#2a2a3e');
   drawRect(x + w/2 - 15, y + 15, 30, 5, '#2a2a3e');
   drawRect(x + w/2 - 5, y + 20, 10, 40, '#2a2a3e');
@@ -1267,7 +1401,13 @@ function drawShelf(x, y, w, h) {
 
 function drawCharacter(x, y, state, walkFrame) {
   const bounce = isWalking ? Math.sin(walkFrame * 0.5) * 3 : 0;
-  
+
+  // Calculate red tint based on intensity
+  const redTint = currentIntensity >= 3 ? 0.4 : currentIntensity >= 2 ? 0.2 : 0;
+  const skinColor = redTint > 0
+    ? `rgb(${255}, ${219 * (1 - redTint)}, ${172 * (1 - redTint)})`
+    : '#ffdbac';
+
   if (state === 'sleeping') {
     drawRect(x - 20, y + 10, 40, 15, '#4a90e2');
     drawCircle(x - 25, y + 17, 10, '#ffdbac');
@@ -1280,28 +1420,37 @@ function drawCharacter(x, y, state, walkFrame) {
   } else {
     const yPos = y + bounce;
     drawRect(x - 10, yPos, 20, 25, '#4a90e2');
-    drawCircle(x, yPos - 8, 10, '#ffdbac');
+    drawCircle(x, yPos - 8, 10, skinColor);
     ctx.fillStyle = '#000000';
     ctx.fillRect(x - 4, yPos - 10, 2, 2);
     ctx.fillRect(x + 2, yPos - 10, 2, 2);
-    
+
+    // Sweat drops for high intensity
+    if (currentIntensity >= 2) {
+      const sweatOffset = (Date.now() / 200) % 2;
+      ctx.fillStyle = 'rgba(100, 150, 255, 0.6)';
+      ctx.beginPath();
+      ctx.arc(x + 8, yPos - 5 + sweatOffset * 3, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     if (state === 'working') {
       // Typing animation
       const typeOffset = Math.sin(typingAnimation) * 3;
-      drawRect(x + 8, yPos + 5 + typeOffset, 12, 4, '#ffdbac');
-      drawRect(x - 12, yPos + 5 - typeOffset, 4, 12, '#ffdbac');
+      drawRect(x + 8, yPos + 5 + typeOffset, 12, 4, skinColor);
+      drawRect(x - 12, yPos + 5 - typeOffset, 4, 12, skinColor);
     } else if (state === 'coffee') {
-      drawRect(x + 5, yPos + 5, 12, 4, '#ffdbac');
+      drawRect(x + 5, yPos + 5, 12, 4, skinColor);
       drawRect(x + 15, yPos + 3, 6, 8, '#ffffff');
     } else if (isWalking) {
       const armOffset = Math.sin(walkFrame * 0.5) * 5;
-      drawRect(x - 5, yPos + 5 + armOffset, 4, 12, '#ffdbac');
-      drawRect(x + 1, yPos + 5 - armOffset, 4, 12, '#ffdbac');
+      drawRect(x - 5, yPos + 5 + armOffset, 4, 12, skinColor);
+      drawRect(x + 1, yPos + 5 - armOffset, 4, 12, skinColor);
     } else {
-      drawRect(x - 12, yPos + 5, 4, 12, '#ffdbac');
-      drawRect(x + 8, yPos + 5, 4, 12, '#ffdbac');
+      drawRect(x - 12, yPos + 5, 4, 12, skinColor);
+      drawRect(x + 8, yPos + 5, 4, 12, skinColor);
     }
-    
+
     if (isWalking) {
       const legOffset = Math.sin(walkFrame * 0.5) * 8;
       drawRect(x - 6, yPos + 25, 5, 12 + legOffset, '#2a2a3e');
@@ -1334,6 +1483,12 @@ function drawRoom() {
   drawCoffeeMachine(680, 140, 70, 50);
   drawPlant(40, 140, 50, 80);
   drawShelf(650, 60, 100, 60);
+
+  // Draw steam particles behind character for depth
+  if (currentState === 'working' && currentIntensity > 0) {
+    drawSteamParticles();
+  }
+
   drawCharacter(characterPos.x, characterPos.y, currentState, walkCycle);
   
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -1364,13 +1519,16 @@ function updatePosition() {
 function updateVisuals() {
   const hour = new Date().getHours();
   windowLight = (hour >= 6 && hour < 18) ? 0.8 : 0.2;
-  
+
   if (currentState === 'working') {
     monitorGlow = 0.5 + Math.sin(Date.now() / 500) * 0.3;
     typingAnimation += 0.5;
   } else {
     monitorGlow = Math.max(0, monitorGlow - 0.02);
   }
+
+  // Update steam particles
+  updateSteamParticles();
 }
 
 function animate() {

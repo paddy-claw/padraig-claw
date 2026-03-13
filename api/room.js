@@ -1,5 +1,5 @@
 // Combined endpoint - handles both POST (activity) and GET (status)
-// No persistent storage needed - history is client-side
+// In-memory state with intensity tracking
 
 export default function handler(req, res) {
   // POST /api/room - Receive activity ping from VPS
@@ -10,12 +10,23 @@ export default function handler(req, res) {
     }
     
     const now = Date.now();
+    const body = req.body || {};
     
-    // Simple in-memory state (resets on cold start, but that's fine)
+    // Build combined state string: "working,3" or "coffee" or "sleeping"
+    const baseState = body.state || 'working';
+    const intensity = body.intensity || 0;
+    const combinedState = intensity > 0 ? `${baseState},${intensity}` : baseState;
+    
+    // Store activity state
     global.lastActivity = now;
-    global.lastTool = req.body.tool || 'unknown';
+    global.state = combinedState;
+    global.lastTool = body.tool || 'unknown';
     
-    return res.status(200).json({ success: true, timestamp: now });
+    return res.status(200).json({ 
+      success: true, 
+      timestamp: now,
+      state: combinedState
+    });
   }
 
   // GET /api/room - Check current status
@@ -24,11 +35,12 @@ export default function handler(req, res) {
     const lastActive = global.lastActivity || 0;
     const inactiveTime = now - lastActive;
     
-    let state = 'sleeping';
-    if (inactiveTime < 1 * 60 * 1000) {
-      state = 'working';
-    } else if (inactiveTime < 20 * 60 * 1000) {
-      state = 'coffee';
+    // Use stored combined state if recent, otherwise calculate
+    let combinedState = global.state;
+    if (!combinedState || inactiveTime > 20 * 60 * 1000) {
+      combinedState = 'sleeping';
+    } else if (inactiveTime > 1 * 60 * 1000 && !combinedState.includes('coffee')) {
+      combinedState = 'coffee';
     }
 
     // Prevent caching
@@ -37,7 +49,7 @@ export default function handler(req, res) {
     res.setHeader('Expires', '0');
 
     return res.status(200).json({
-      state,
+      state: combinedState,
       lastActive,
       inactiveTime,
       lastTool: global.lastTool || 'none',
@@ -46,7 +58,6 @@ export default function handler(req, res) {
         hour: '2-digit',
         minute: '2-digit'
       })
-      // Note: history is now managed client-side in localStorage
     });
   }
 
