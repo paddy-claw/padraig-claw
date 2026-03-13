@@ -36,18 +36,21 @@ The OpenClaw Ireland website features an immersive dark-themed design with a uni
 ```
 website/
 ├── index.html              # Main landing page (immersive design)
+├── 404.html                # Custom error page
 ├── showcase.html           # Design gallery (v1-v13 variations)
 ├── design8-living.html     # Previous iteration
 ├── og-image.html           # OG image generator
 ├── og-image.png            # Social sharing image (1200x630)
 ├── og-image.svg            # Vector source
+├── robots.txt              # SEO crawler instructions
+├── sitemap.xml             # SEO sitemap
 ├── styles.css              # Theme system (modern, brutalism, etc.)
-├── vercel.json             # Deployment config
+├── vercel.json             # Deployment config + security headers
 ├── activity-history.json   # Seed data for activity feed
-├── api/
-│   ├── room.js            # Combined activity/status endpoint
-│   ├── activity.js        # Legacy webhook endpoint
-│   └── status.js          # Legacy status endpoint
+└── api/
+    ├── room.js            # Combined activity/status endpoint
+    ├── activity.js        # Legacy webhook endpoint
+    └── status.js          # Legacy status endpoint
 ```
 
 ## Environment Variables

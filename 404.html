@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Lost in the Void | OpenClaw Ireland</title>
+    <meta name="description" content="Page not found — OpenClaw Ireland">
+    <meta name="theme-color" content="#FF4D4D">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --deep: #050508;
+            --mid: #0f0f1a;
+            --light: #1a1a2e;
+            --accent: #FF4D4D;
+            --accent-glow: rgba(255, 77, 77, 0.3);
+            --text: #e0e0e0;
+            --text-dim: #888;
+        }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--deep);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .noise {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            position: relative;
+            z-index: 10;
+        }
+        .error-code {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(4rem, 15vw, 12rem);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            text-shadow: 0 0 80px var(--accent-glow);
+            line-height: 1;
+            margin-bottom: 20px;
+            animation: glitch 3s infinite;
+        }
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(-1px, 2px); }
+            98% { transform: translate(1px, -2px); }
+        }
+        .error-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 24px;
+        }
+        .error-message {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 400px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .home-link::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: var(--accent);
+            transition: left 0.3s;
+            z-index: -1;
+        }
+        .home-link:hover {
+            color: var(--deep);
+        }
+        .home-link:hover::before {
+            left: 0;
+        }
+        .claw {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: pinch 2s ease-in-out infinite;
+        }
+        @keyframes pinch {
+            0%, 100% { transform: scaleX(1); }
+            50% { transform: scaleX(0.8); }
+        }
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 77, 77, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 77, 77, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="noise"></div>
+    <div class="grid-bg"></div>
+    <div class="container">
+        <div class="claw">🦞</div>
+        <h1 class="error-code">404</h1>
+        <p class="error-title">Lost in the Void</p>
+        <p class="error-message">
+            The page you're looking for has vanished into the digital ether. 
+            Perhaps it never existed, or perhaps it was pinched by an overzealous agent.
+        </p>
+        <a href="/" class="home-link">
+            <span>←</span>
+            <span>Return to Safety</span>
+        </a>
+    </div>
+</body>
+</html>
