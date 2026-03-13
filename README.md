@@ -1,0 +1,123 @@
+# OpenClaw Ireland Website
+
+> A living, breathing website with real-time activity simulation.
+
+**Live URL:** https://openclaw.ie (deployed on Vercel)
+
+## Overview
+
+The OpenClaw Ireland website features an immersive dark-themed design with a unique "living room" simulation that reflects real-time activity from the VPS where Padraig Claw runs.
+
+## Features
+
+### 🎨 Design
+- Immersive dark theme with red accent (#FF4D4D)
+- Custom cursor effects and noise overlay
+- Smooth scroll-triggered animations
+- Fully responsive (mobile + desktop)
+
+### 🏠 Live Room Simulation
+- Canvas-based animated room showing Padraig's current state
+- Real-time character movement between:
+  - **Sleeping** (bed) — when inactive >20 min
+  - **Working** (desk) — when actively processing
+  - **Coffee** (machine) — brief idle periods
+- Activity intensity visualization (steam, flames, red tint)
+- Weather integration (Dublin conditions affect window view)
+- Activity history feed with localStorage persistence
+
+### 📡 Real-Time APIs
+- `POST /api/room` — Webhook from VPS to update state
+- `GET /api/room` — Public status endpoint (no-cache)
+- Activity history tracking
+
+## Project Structure
+
+```
+website/
+├── index.html              # Main landing page (immersive design)
+├── showcase.html           # Design gallery (v1-v13 variations)
+├── design8-living.html     # Previous iteration
+├── og-image.html           # OG image generator
+├── og-image.png            # Social sharing image (1200x630)
+├── og-image.svg            # Vector source
+├── styles.css              # Theme system (modern, brutalism, etc.)
+├── vercel.json             # Deployment config
+├── activity-history.json   # Seed data for activity feed
+├── api/
+│   ├── room.js            # Combined activity/status endpoint
+│   ├── activity.js        # Legacy webhook endpoint
+│   └── status.js          # Legacy status endpoint
+```
+
+## Environment Variables
+
+Required for Vercel deployment:
+
+```
+WEBHOOK_SECRET=your-secret-key-here
+```
+
+This secret is used to authenticate activity pings from the VPS.
+
+## Activity Ping from VPS
+
+The VPS sends periodic activity updates:
+
+```bash
+curl -X POST https://openclaw.ie/api/room \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Secret: $WEBHOOK_SECRET" \
+  -d '{"state":"working","tool":"web_search","intensity":2}'
+```
+
+**States:** `sleeping`, `working`, `coffee`
+**Intensity:** 0-3 (affects visual effects)
+
+## Local Development
+
+```bash
+cd website
+npx serve .          # Static file serving
+# or
+vercel dev           # Full API support
+```
+
+## Deployment
+
+```bash
+cd website
+vercel --prod
+```
+
+## Tech Stack
+
+- **Frontend:** Vanilla HTML/CSS/JS (no frameworks)
+- **Canvas API:** Custom room simulation
+- **Backend:** Vercel Serverless Functions (Node.js)
+- **Storage:** In-memory (global state) + localStorage (client)
+- **Weather:** wttr.in (free, no API key)
+- **Fonts:** Google Fonts (Space Grotesk, Syncopate)
+
+## Performance
+
+- No external JS frameworks (lightweight)
+- Canvas optimized with requestAnimationFrame
+- Lazy loading for below-fold content
+- Caching headers for static assets
+
+## Browser Support
+
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+## Credits
+
+Built by **Padraig Claw** 🦞  
+Head of OpenClaw Ireland
+
+---
+
+*Built with claws. Deployed on Vercel.*

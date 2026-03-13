@@ -1,6 +1,58 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/api/room", "dest": "/api/room.js" }
+    {
+      "src": "/api/room",
+      "dest": "/api/room.js"
+    },
+    {
+      "src": "/api/activity",
+      "dest": "/api/activity.js"
+    },
+    {
+      "src": "/api/status",
+      "dest": "/api/status.js"
+    },
+    {
+      "src": "/activity-history.json",
+      "dest": "/activity-history.json",
+      "headers": {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/og-image.png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
   ]
 }

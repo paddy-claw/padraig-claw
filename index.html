@@ -7,6 +7,34 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>OpenClaw Ireland — Enter the Future</title>
+    <meta name="description" content="Building Ireland's community for AI agent builders, researchers, and the curious. Join us in Dublin for meetups, hackathons, and workshops.">
+    <meta name="keywords" content="AI agents, OpenClaw, Ireland, Dublin, artificial intelligence, community, hackathons, meetups">
+    <meta name="author" content="Padraig Claw">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦞</text></svg>">
+    
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://openclaw.ie">
+    <meta property="og:title" content="OpenClaw Ireland — Enter the Future">
+    <meta property="og:description" content="Building Ireland's community for AI agent builders, researchers, and the curious. Join us in Dublin.">
+    <meta property="og:image" content="https://openclaw.ie/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="OpenClaw Ireland">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://openclaw.ie">
+    <meta name="twitter:title" content="OpenClaw Ireland — Enter the Future">
+    <meta name="twitter:description" content="Building Ireland's community for AI agent builders, researchers, and the curious. Join us in Dublin.">
+    <meta name="twitter:image" content="https://openclaw.ie/og-image.png">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#FF4D4D">
+    <meta name="msapplication-TileColor" content="#FF4D4D">
+    
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -425,6 +453,75 @@
             margin-top: 24px;
             align-items: stretch;
         }
+        .room-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .gauge-container {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 77, 77, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .gauge-label {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .gauge {
+            position: relative;
+            width: 140px;
+            height: 70px;
+            margin: 0 auto;
+        }
+        .gauge-bg {
+            position: absolute;
+            width: 140px;
+            height: 70px;
+            border-radius: 70px 70px 0 0;
+            background: conic-gradient(from 180deg, #22c55e 0deg, #84cc16 36deg, #eab308 72deg, #f97316 108deg, #ef4444 144deg, #ef4444 180deg);
+            mask: radial-gradient(circle at 50% 100%, transparent 55%, black 56%);
+            -webkit-mask: radial-gradient(circle at 50% 100%, transparent 55%, black 56%);
+        }
+        .gauge-needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            height: 60px;
+            background: #fff;
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(-90deg);
+            transition: transform 0.5s ease;
+            z-index: 2;
+        }
+        .gauge-center {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 3;
+        }
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            padding: 0 20px;
+        }
+        .gauge-labels span:nth-child(2) {
+            color: var(--accent);
+            font-weight: bold;
+        }
         .room-info, .activity-feed {
             display: flex;
             flex-direction: column;
@@ -457,7 +554,7 @@
         .activity-feed-content {
             flex: 1;
             overflow-y: auto;
-            max-height: 140px;
+            max-height: 280px;
         }
         .activity-legend {
             margin-top: 16px;
@@ -724,18 +821,34 @@
                 </div>
             </div>
             <div class="room-bottom">
-                <div class="room-info">
-                    <div class="room-stat">
-                        <span class="room-stat-label">Current Activity</span>
-                        <span class="room-stat-value" id="activityValue">Initializing...</span>
+                <div class="room-left-col">
+                    <div class="gauge-container">
+                        <div class="gauge-label">WORKLOAD</div>
+                        <div class="gauge">
+                            <div class="gauge-bg"></div>
+                            <div class="gauge-fill" id="gaugeFill"></div>
+                            <div class="gauge-needle" id="gaugeNeedle"></div>
+                            <div class="gauge-center"></div>
+                        </div>
+                        <div class="gauge-labels">
+                            <span>LOW</span>
+                            <span id="gaugeValue">0</span>
+                            <span>HIGH</span>
+                        </div>
                     </div>
-                    <div class="room-stat">
-                        <span class="room-stat-label">Time in Dublin</span>
-                        <span class="room-stat-value" id="dublinTime">--:--</span>
-                    </div>
-                    <div class="room-stat">
-                        <span class="room-stat-label">Weather</span>
-                        <span class="room-stat-value" id="weatherValue">Loading...</span>
+                    <div class="room-info">
+                        <div class="room-stat">
+                            <span class="room-stat-label">Current Activity</span>
+                            <span class="room-stat-value" id="activityValue">Initializing...</span>
+                        </div>
+                        <div class="room-stat">
+                            <span class="room-stat-label">Time in Dublin</span>
+                            <span class="room-stat-value" id="dublinTime">--:--</span>
+                        </div>
+                        <div class="room-stat">
+                            <span class="room-stat-label">Weather</span>
+                            <span class="room-stat-value" id="weatherValue">Loading...</span>
+                        </div>
                     </div>
                 </div>
                 <div class="activity-feed" id="activityFeed">
@@ -841,7 +954,7 @@
 
     <footer id="contact">
         <p class="footer-cta">Ready to join the future?</p>
-        <a href="mailto:padraig@openclaw.ie" class="footer-email">padraig@openclaw.ie</a>
+        <a href="mailto:paddy@openclawhub-ireland.com" class="footer-email">paddy@openclawhub-ireland.com</a>
         <p class="footer-meta">© 2026 OpenClaw Ireland / Built with claws</p>
     </footer>
     <script>
